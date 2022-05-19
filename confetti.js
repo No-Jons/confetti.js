@@ -1,15 +1,14 @@
 class Confetti {
-    constructor(particles, gravity, maxIters) {
+    constructor(particles, gravity, maxIters, colors, shapes, size, canvasId) {
         this.numParticles = particles;
         this.maxIters = maxIters;
-        this.colors = ["#f94144", "#f3722c", "#f8961e", "#f9844a", "#f9c74f", "#90be6d", "#43aa8b",
-            "#4d908e", "#577590", "#277da1"];
-        this.shapes = ["square", "square", "square", "square", "circle", "circle", "triangle"];
-        this.maxWidth = 15;
-        this.maxHeight = 15;
-        this.variance = 10;
-        this.drawInterval = 0.01;
-        this.canvasId = "confetti-canvas"; // change this id to match canvas
+        this.colors = colors;
+        this.shapes = shapes;
+        this.maxWidth = size.maxWidth;
+        this.maxHeight = size.maxHeight;
+        this.variance = size.variance;
+        this.drawInterval = 0.01; // 0.01
+        this.canvasId = canvasId;
         this.particles = [];
         for (let x = 0; x < this.numParticles; x++){
             let variance = Math.floor(Math.random()*this.variance);
@@ -18,7 +17,7 @@ class Confetti {
                     spawnAt: Math.round(Math.random()*this.maxIters),
                     x: Math.round(Math.random()*window.innerWidth),
                     y: 0,
-                    gravity: gravity + Math.round(Math.random() * (gravity / 10)),
+                    gravity: gravity + Math.round(Math.random() * gravity),
                     waveAmp: Math.round(Math.random()*3) + 2,
                     waveVar: Math.round(Math.random()*25) + 10,
                     waveOffset: Math.round(Math.random()*100),
@@ -35,6 +34,7 @@ class Confetti {
         }
         this.drawParticles = function(iters, ctx, canvas){
             let below = 0;
+            let to_remove = [];
             for (let particle of this.particles) {
                 if (particle.spawnAt <= iters){
                     particle.x += Math.cos(
@@ -79,6 +79,7 @@ class Confetti {
                     particle.y += particle.gravity * this.drawInterval;
                     if (particle.y > canvas.height + this.maxHeight){
                         below++;
+                        to_remove.push(particle);
                     }
                     particle.rotation += particle.spin
                     if (particle.rotation > 360){
@@ -92,6 +93,8 @@ class Confetti {
                     }
                 }
             }
+            for (let x of to_remove)
+              this.particles.splice(this.particles.indexOf(x), 1);
             return below;
         }
     }
@@ -112,8 +115,23 @@ function rotateTri(x, y, cx, cy, angle){
         Math.round((cos * (y - cy)) + (sin * (x - cx)) + cy)];
 }
 
-function startConfetti({particles = 1000, gravity = 250, maxIters = 500} = {}) {
-    let confetti = new Confetti(particles, gravity, maxIters);
+function startConfetti(
+  {
+    particles = 1000,
+    gravity = 250,
+    maxIters = 500,
+    colors = ["#f94144", "#f3722c", "#f8961e", "#f9844a", "#f9c74f", "#90be6d", "#43aa8b",
+            "#4d908e", "#577590", "#277da1"],
+    shapeWeight = {square: 4, circle: 2, triangle: 1},
+    size = {maxWidth: 20, maxHeight: 20, variance: 10},
+    canvasId = "confetti-canvas"
+  } = {}) {
+    let shapes = [];
+    for (let [key, value] of Object.entries(shapeWeight)){
+      for (let x = 0; x < value; x++)
+        shapes.push(key);
+    }
+    let confetti = new Confetti(particles, gravity, maxIters, colors, shapes, size, canvasId);
     let canvas = document.getElementById(confetti.canvasId);
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -123,7 +141,6 @@ function startConfetti({particles = 1000, gravity = 250, maxIters = 500} = {}) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         let below = confetti.drawParticles(iters, ctx, canvas);
         iters++;
-        console.log(iters);
         if (below >= confetti.particles.length) {
             clearInterval(doDraw);
             ctx.clearRect(0, 0, canvas.width, canvas.height);
