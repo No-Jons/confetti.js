@@ -8,8 +8,8 @@ class Confetti {
         this.maxWidth = 15;
         this.maxHeight = 15;
         this.variance = 10;
-        this.drawInterval = 0.01; // 0.01
-        this.canvasId = "confetti-canvas";
+        this.drawInterval = 0.01;
+        this.canvasId = "confetti-canvas"; // change this id to match canvas
         this.particles = [];
         for (let x = 0; x < this.numParticles; x++){
             let variance = Math.floor(Math.random()*this.variance);
